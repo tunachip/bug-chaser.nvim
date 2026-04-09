@@ -1,0 +1,22 @@
+WRN 2026-04-09T15:31:59.843 ?.38076    server_start:197: Failed to start server: operation not permitted: /mnt/wslg/runtime-dir/nvim.38076.0
+WRN 2026-04-09T15:32:24.439 ?.38143    server_start:197: Failed to start server: operation not permitted: /mnt/wslg/runtime-dir/nvim.38143.0
+WRN 2026-04-09T15:32:36.661 ?.38282    server_start:197: Failed to start server: operation not permitted: /mnt/wslg/runtime-dir/nvim.38282.0
+WRN 2026-04-09T15:32:44.457 ?.38283    server_start:197: Failed to start server: operation not permitted: /mnt/wslg/runtime-dir/nvim.38283.0
+WRN 2026-04-09T15:33:14.140 ?.38353    server_start:197: Failed to start server: operation not permitted: /mnt/wslg/runtime-dir/nvim.38353.0
+WRN 2026-04-09T15:52:58.982 ?.39579    server_start:197: Failed to start server: operation not permitted: /mnt/wslg/runtime-dir/nvim.39579.0
+WRN 2026-04-09T15:52:58.982 ?.39580    server_start:197: Failed to start server: operation not permitted: /mnt/wslg/runtime-dir/nvim.39580.0
+WRN 2026-04-09T15:53:05.834 ?.39582    server_start:197: Failed to start server: operation not permitted: /mnt/wslg/runtime-dir/nvim.39582.0
+ERR 2026-04-09T15:53:05.845 ?.39582    pty_proc_spawn:190: forkpty failed: Permission denied
+ERR 2026-04-09T15:53:08.873 ?.39582    pty_proc_spawn:190: forkpty failed: Permission denied
+WRN 2026-04-09T15:53:22.423 ?.39584    server_start:197: Failed to start server: operation not permitted: /mnt/wslg/runtime-dir/nvim.39584.0
+ERR 2026-04-09T15:53:22.435 ?.39584    pty_proc_spawn:190: forkpty failed: Permission denied
+ERR 2026-04-09T15:53:25.465 ?.39584    pty_proc_spawn:190: forkpty failed: Permission denied
+WRN 2026-04-09T15:54:19.862 ?.39614    server_start:197: Failed to start server: operation not permitted: /mnt/wslg/runtime-dir/nvim.39614.0
+ERR 2026-04-09T15:54:19.874 ?.39614    pty_proc_spawn:190: forkpty failed: Permission denied
+ERR 2026-04-09T15:54:22.900 ?.39614    pty_proc_spawn:190: forkpty failed: Permission denied
+WRN 2026-04-09T15:54:29.615 ?.39620    server_start:197: Failed to start server: operation not permitted: /mnt/wslg/runtime-dir/nvim.39620.0
+ERR 2026-04-09T15:54:29.627 ?.39620    pty_proc_spawn:190: forkpty failed: Permission denied
+ERR 2026-04-09T15:54:32.659 ?.39620    pty_proc_spawn:190: forkpty failed: Permission denied
+WRN 2026-04-09T15:54:50.906 ?.39628    server_start:197: Failed to start server: operation not permitted: /mnt/wslg/runtime-dir/nvim.39628.0
+WRN 2026-04-09T15:54:50.906 ?.39629    server_start:197: Failed to start server: operation not permitted: /mnt/wslg/runtime-dir/nvim.39629.0
+WRN 2026-04-09T17:45:05.308 ?.41120    server_start:197: Failed to start server: operation not permitted: /mnt/wslg/runtime-dir/nvim.41120.0
