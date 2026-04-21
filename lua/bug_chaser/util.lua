@@ -42,10 +42,15 @@ local language_extensions = {
   cpp = ".cpp",
   go = ".go",
   javascript = ".js",
+  javascriptreact = ".jsx",
   lua = ".lua",
+  bash = ".sh",
   python = ".py",
   rust = ".rs",
+  sh = ".sh",
   typescript = ".ts",
+  typescriptreact = ".tsx",
+  zsh = ".sh",
   zig = ".zig",
 }
 
@@ -68,6 +73,10 @@ local path_extensions = {
   ts = true,
   zig = true,
 }
+
+local function startswith(text, prefix)
+  return type(text) == "string" and type(prefix) == "string" and text:sub(1, #prefix) == prefix
+end
 
 local function is_list(value)
   local checker = vim.islist or vim.tbl_islist
@@ -211,6 +220,29 @@ function M.resolve_path(path, cwd)
   return M.normalize_path(path)
 end
 
+function M.relpath(base, target)
+  if not base or not target then
+    return nil
+  end
+
+  if vim.fs and vim.fs.relpath then
+    return vim.fs.relpath(base, target)
+  end
+
+  base = M.normalize_path(base)
+  target = M.normalize_path(target)
+
+  if startswith(target, base .. "/") then
+    return target:sub(#base + 2)
+  end
+
+  if target == base then
+    return "."
+  end
+
+  return nil
+end
+
 function M.same_path(left, right)
   if not left or not right then
     return false
@@ -232,6 +264,14 @@ function M.detect_language(bufnr)
   end
 
   return nil
+end
+
+function M.get_extension(path)
+  if not path or path == "" then
+    return nil
+  end
+
+  return path:match("%.([^./\\]+)$")
 end
 
 function M.language_extension(language)
@@ -269,6 +309,74 @@ function M.get_buffer_path(bufnr)
     return nil
   end
   return M.normalize_path(path)
+end
+
+function M.find_up(names, start)
+  if not start or start == "" then
+    return nil
+  end
+
+  if vim.fs and vim.fs.find then
+    return vim.fs.find(names, {
+      path = start,
+      upward = true,
+    })[1]
+  end
+
+  return nil
+end
+
+function M.find_project_venv_python(start)
+  local venv = M.find_up(".venv", start)
+  if not venv then
+    return nil
+  end
+
+  local python = M.joinpath(venv, "bin", "python")
+  if vim.fn.executable(python) == 1 then
+    return M.normalize_path(python)
+  end
+
+  local python3 = M.joinpath(venv, "bin", "python3")
+  if vim.fn.executable(python3) == 1 then
+    return M.normalize_path(python3)
+  end
+
+  return nil
+end
+
+local function resolve_python_command(vars)
+  local source_file = vars.source_file or vars.file
+  local start = M.dirname(source_file)
+  return M.find_project_venv_python(start) or "python3"
+end
+
+function M.default_python_argv(vars)
+  return { resolve_python_command(vars), vars.file }
+end
+
+function M.default_python_module_argv(vars)
+  local source_file = vars.source_file or vars.file
+  local start = M.dirname(source_file)
+  local python = resolve_python_command(vars)
+
+  if vars.is_temp_source then
+    return { python, vars.file }
+  end
+
+  local git_dir = M.find_up(".git", start)
+  local run_root = git_dir and M.dirname(git_dir) or vars.cwd or start
+  local rel = M.relpath(run_root, source_file)
+
+  if rel and rel:sub(-3) == ".py" then
+    local module = rel:gsub("%.py$", ""):gsub("[/\\]", ".")
+    module = module:gsub("%.__init__$", "")
+    if module ~= "" and not module:find("[^%w_%.]") then
+      return { python, "-m", module }
+    end
+  end
+
+  return { python, vars.file }
 end
 
 function M.get_buffer_text(bufnr, start_line, end_line)
@@ -344,6 +452,16 @@ end
 
 function M.expand_argv(command, args, vars)
   local argv = {}
+  local resolved_command = command
+  local resolved_args = args
+
+  if type(resolved_command) == "function" then
+    resolved_command = resolved_command(vim.deepcopy(vars))
+  end
+
+  if type(resolved_args) == "function" then
+    resolved_args = resolved_args(vim.deepcopy(vars))
+  end
 
   local function push(part)
     if part == nil or part == "" then
@@ -352,16 +470,20 @@ function M.expand_argv(command, args, vars)
     table.insert(argv, M.expand_string(tostring(part), vars))
   end
 
-  if type(command) == "table" then
-    for _, part in ipairs(command) do
+  if type(resolved_command) == "table" then
+    for _, part in ipairs(resolved_command) do
       push(part)
     end
   else
-    push(command)
+    push(resolved_command)
   end
 
-  for _, arg in ipairs(args or {}) do
-    push(arg)
+  if type(resolved_args) == "table" then
+    for _, arg in ipairs(resolved_args) do
+      push(arg)
+    end
+  else
+    push(resolved_args)
   end
 
   return argv

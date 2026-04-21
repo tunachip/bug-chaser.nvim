@@ -232,6 +232,301 @@ do
 end
 
 do
+  local argv = require("bug_chaser.util").default_python_argv({
+    cwd = "/tmp/project",
+    file = "/tmp/project/pkg/main.py",
+    is_temp_source = false,
+    source_file = "/tmp/project/pkg/main.py",
+  })
+
+  expect_equal(argv[1], "python3", "python defaults: expected python3 fallback")
+  expect_equal(argv[2], "/tmp/project/pkg/main.py", "python defaults: expected direct file execution")
+end
+
+do
+  local argv = require("bug_chaser.util").default_python_module_argv({
+    cwd = "/tmp/project",
+    file = "/tmp/project/pkg/main.py",
+    is_temp_source = false,
+    source_file = "/tmp/project/pkg/main.py",
+  })
+
+  expect_equal(argv[1], "python3", "python module defaults: expected python3 fallback")
+  expect_equal(argv[2], "-m", "python module defaults: expected module execution")
+  expect_equal(argv[3], "pkg.main", "python module defaults: expected module path")
+end
+
+do
+  local argv = require("bug_chaser.util").expand_argv(
+    function()
+      return { "node", "--experimental-strip-types" }
+    end,
+    function()
+      return { "$file" }
+    end,
+    { file = "/tmp/example.ts" }
+  )
+
+  expect_equal(argv[1], "node", "expand_argv: expected function command result")
+  expect_equal(argv[2], "--experimental-strip-types", "expand_argv: expected function command flags")
+  expect_equal(argv[3], "/tmp/example.ts", "expand_argv: expected placeholder expansion")
+end
+
+do
+  local commands = config.commands_for_language({
+    commands = {
+      ["all-tests"] = {
+        args = { "-q" },
+        capture = "none",
+        command = "pytest",
+        mode = "command",
+      },
+      ["current-buffer"] = {
+        args = { "$file" },
+        command = "python3",
+        mode = "command",
+      },
+    },
+  })
+
+  expect_equal(#commands, 2, "commands_for_language: expected both named commands")
+  expect_equal(commands[1].name, "all-tests", "commands_for_language: expected sorted command names")
+  expect_equal(commands[1].capture, "none", "commands_for_language: expected explicit capture mode")
+  expect_equal(commands[2].name, "current-buffer", "commands_for_language: expected second command name")
+end
+
+do
+  local commands = config.commands_for_language({
+    args = { "$file" },
+    command = "python3",
+    mode = "command",
+  })
+
+  expect_equal(#commands, 1, "commands_for_language: expected implicit default command")
+  expect_equal(commands[1].name, "default", "commands_for_language: expected default command name")
+  expect_equal(commands[1].capture, "buffer", "commands_for_language: expected buffer capture by default")
+end
+
+do
+  local diagnostics = require("bug_chaser.diagnostics")
+  diagnostics.setup({
+    diagnostics = {
+      virtual_lines = {
+        enabled = true,
+      },
+    },
+  })
+
+  local current = vim.diagnostic.config()
+  expect(current.bug_chaser_virtual_lines ~= false, "diagnostics: expected bug-chaser virtual lines to be enabled")
+  expect_equal(current.virtual_text, false, "diagnostics: expected virtual_text to be disabled when custom virtual lines are enabled")
+  expect_equal(current.virtual_lines, false, "diagnostics: expected builtin virtual_lines to be disabled when custom virtual lines are enabled")
+end
+
+do
+  local terminal = require("bug_chaser.terminal")
+  local captured = nil
+  local original_run = terminal.run
+  local temp_path = vim.fn.tempname() .. ".tsx"
+
+  terminal.run = function(argv, opts, callback)
+    captured = {
+      argv = vim.deepcopy(argv),
+      opts = vim.deepcopy(opts),
+    }
+    callback({
+      bufnr = nil,
+      code = 0,
+      output = "",
+      winid = nil,
+    })
+    return true
+  end
+
+  local ok, err = pcall(function()
+    vim.o.swapfile = false
+    vim.cmd("enew")
+    local bufnr = vim.api.nvim_get_current_buf()
+    vim.api.nvim_buf_set_name(bufnr, temp_path)
+    vim.bo[bufnr].filetype = "typescriptreact"
+    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { "console.log('ok')" })
+
+    bug_chaser.setup({
+      languages = {
+        typescriptreact = {
+          args = { "run", "$file" },
+          command = "bun",
+          mode = "command",
+        },
+      },
+    })
+
+    bug_chaser.run_command({ range = 0 })
+  end)
+
+  terminal.run = original_run
+
+  expect(ok, "runner override: expected command execution setup to succeed" .. (err and (": " .. tostring(err)) or ""))
+  expect(captured ~= nil, "runner override: expected terminal.run to be invoked")
+  if captured then
+    expect_equal(captured.argv[1], "bun", "runner override: expected exact filetype command")
+    expect_equal(captured.argv[2], "run", "runner override: expected custom args")
+    expect(captured.argv[3]:match("%.tsx$") ~= nil, "runner override: expected TSX temp source path")
+  end
+end
+
+do
+  local terminal = require("bug_chaser.terminal")
+  local captured = nil
+  local select_calls = 0
+  local original_run = terminal.run
+  local original_select = vim.ui.select
+  local temp_path = vim.fn.tempname() .. ".py"
+
+  terminal.run = function(argv, opts, callback)
+    captured = {
+      argv = vim.deepcopy(argv),
+      opts = vim.deepcopy(opts),
+    }
+    callback({
+      bufnr = nil,
+      code = 0,
+      output = "",
+      winid = nil,
+    })
+    return true
+  end
+
+  vim.ui.select = function(items, select_opts, on_choice)
+    select_calls = select_calls + 1
+    expect_equal(select_opts.prompt, "Choose python command", "named command prompt: unexpected prompt")
+    on_choice(items[1])
+  end
+
+  local ok, err = pcall(function()
+    vim.o.swapfile = false
+    vim.cmd("enew")
+    local bufnr = vim.api.nvim_get_current_buf()
+    vim.api.nvim_buf_set_name(bufnr, temp_path)
+    vim.bo[bufnr].filetype = "python"
+    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { "print('ok')" })
+
+    bug_chaser.setup({
+      languages = {
+        python = {
+          commands = {
+            ["all-tests"] = {
+              args = { "-q" },
+              capture = "none",
+              command = "pytest",
+              description = "Run the full suite",
+              mode = "command",
+            },
+            ["current-buffer"] = {
+              args = { "$file" },
+              command = "python3",
+              mode = "command",
+            },
+          },
+        },
+      },
+    })
+
+    bug_chaser.run_command({ range = 0 })
+  end)
+
+  terminal.run = original_run
+  vim.ui.select = original_select
+
+  expect(ok, "named command prompt: expected execution to succeed" .. (err and (": " .. tostring(err)) or ""))
+  expect_equal(select_calls, 1, "named command prompt: expected command picker to open")
+  expect(captured ~= nil, "named command prompt: expected terminal.run to be invoked")
+  if captured then
+    expect_equal(captured.argv[1], "pytest", "named command prompt: expected selected command")
+    expect_equal(captured.argv[2], "-q", "named command prompt: expected selected args")
+    expect_equal(#captured.argv, 2, "named command prompt: expected script command to ignore the current file")
+  end
+end
+
+do
+  local terminal = require("bug_chaser.terminal")
+  local captured = nil
+  local select_calls = 0
+  local original_run = terminal.run
+  local original_select = vim.ui.select
+  local temp_path = vim.fn.tempname() .. ".py"
+
+  terminal.run = function(argv, opts, callback)
+    captured = {
+      argv = vim.deepcopy(argv),
+      opts = vim.deepcopy(opts),
+    }
+    callback({
+      bufnr = nil,
+      code = 0,
+      output = "",
+      winid = nil,
+    })
+    return true
+  end
+
+  vim.ui.select = function(items, select_opts, on_choice)
+    select_calls = select_calls + 1
+    on_choice(items[1])
+  end
+
+  local ok, err = pcall(function()
+    vim.o.swapfile = false
+    vim.cmd("enew")
+    local bufnr = vim.api.nvim_get_current_buf()
+    vim.api.nvim_buf_set_name(bufnr, temp_path)
+    vim.bo[bufnr].filetype = "python"
+    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { "print('ok')" })
+
+    bug_chaser.setup({
+      languages = {
+        python = {
+          commands = {
+            ["all-tests"] = {
+              args = { "-q" },
+              capture = "none",
+              command = "pytest",
+              mode = "command",
+            },
+            ["current-buffer"] = {
+              args = { "$file" },
+              command = "python3",
+              mode = "command",
+            },
+          },
+        },
+      },
+    })
+
+    local completions = bug_chaser.complete_command_names("all")
+    expect_equal(#completions, 1, "named command completion: expected filtered results")
+    expect_equal(completions[1], "all-tests", "named command completion: unexpected completion")
+
+    bug_chaser.run_command({
+      args = "all-tests",
+      range = 0,
+    })
+  end)
+
+  terminal.run = original_run
+  vim.ui.select = original_select
+
+  expect(ok, "named command arg: expected execution to succeed" .. (err and (": " .. tostring(err)) or ""))
+  expect_equal(select_calls, 0, "named command arg: expected direct command execution without picker")
+  expect(captured ~= nil, "named command arg: expected terminal.run to be invoked")
+  if captured then
+    expect_equal(captured.argv[1], "pytest", "named command arg: expected named command executable")
+    expect_equal(captured.argv[2], "-q", "named command arg: expected named command args")
+  end
+end
+
+do
+  vim.o.swapfile = false
   vim.cmd("enew")
 
   local bufnr = vim.api.nvim_get_current_buf()

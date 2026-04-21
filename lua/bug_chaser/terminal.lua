@@ -142,7 +142,10 @@ function M.run(argv, opts, callback)
     return nil, tostring(result)
   end
 
-  if not opts.focus and origin_winid and valid_window(origin_winid) then
+  if opts.focus and valid_window(state.winid) then
+    vim.api.nvim_set_current_win(state.winid)
+    vim.cmd("startinsert")
+  elseif not opts.focus and origin_winid and valid_window(origin_winid) then
     vim.api.nvim_set_current_win(origin_winid)
   end
 
