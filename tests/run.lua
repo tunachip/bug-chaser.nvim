@@ -232,6 +232,16 @@ do
 end
 
 do
+  local resolved = config.resolve({
+    terminal = {
+      height = 0.25,
+    },
+  })
+
+  expect_equal(resolved.terminal.height, 0.25, "config resolve: expected fractional terminal height to be preserved")
+end
+
+do
   local argv = require("bug_chaser.util").default_python_argv({
     cwd = "/tmp/project",
     file = "/tmp/project/pkg/main.py",
@@ -587,7 +597,7 @@ do
     bug_chaser.setup({
       terminal = {
         focus = false,
-        height = 8,
+        height = 0.25,
       },
       languages = {
         python = {
@@ -620,6 +630,10 @@ do
 
   local terminal_winid_1 = find_terminal_window()
   expect(terminal_winid_1 ~= nil, "terminal integration: expected a terminal window after first run")
+  if terminal_winid_1 then
+    local expected_height = math.max(1, math.min(math.floor((vim.o.lines * 0.25) + 0.5), vim.o.lines - 1))
+    expect_equal(vim.api.nvim_win_get_height(terminal_winid_1), expected_height, "terminal integration: expected fractional terminal height")
+  end
 
   configure_for_line(2, "second failure")
   bug_chaser.run_command({ range = 0 })

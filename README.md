@@ -38,7 +38,7 @@ require("bug_chaser").setup({
   },
   open_command = "split",
   terminal = {
-    height = 12,
+    height = 0.25,
     focus = false,
   },
   virtual_line = {
@@ -147,6 +147,7 @@ Global options:
 - `open_command = "split"` by default
 - `notify_on_success = false`
 - `terminal = { height, focus, position, name }`
+  `height` accepts either a fixed line count such as `12` or a fraction such as `0.25` for 25% of the full Neovim height
 - `virtual_line = { prefix, highlight, above }`
 
 Commands:

@@ -46,11 +46,34 @@ local function terminal_output(bufnr)
   return util.strip_ansi(table.concat(lines, "\n"))
 end
 
+local function editor_height()
+  local ui = vim.api.nvim_list_uis()[1]
+  if ui and ui.height then
+    return ui.height
+  end
+
+  return vim.o.lines
+end
+
+local function resolve_height(height_option)
+  local height = tonumber(height_option) or 12
+
+  if height > 0 and height <= 1 then
+    height = math.floor((editor_height() * height) + 0.5)
+  else
+    height = math.floor(height)
+  end
+
+  local max_height = math.max(editor_height() - 1, 1)
+  return math.max(1, math.min(height, max_height))
+end
+
 local function ensure_window(opts)
-  local height = math.max(1, tonumber(opts.height) or 12)
+  local height = resolve_height(opts.height)
 
   if valid_window(state.winid) then
     vim.api.nvim_set_current_win(state.winid)
+    vim.api.nvim_win_set_height(state.winid, height)
     return state.winid
   end
 
