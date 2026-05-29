@@ -7,25 +7,21 @@ It can also own diagnostic virtual lines for LSP/compiler diagnostics, replacing
 ## Status
 
 This is the initial implementation.
-It supports Python, Lua, JavaScript, TypeScript, C, C++, Go, Rust, and Zig with per-language runner configuration.
+It supports many popular languages out of the box, including Python, Lua, JavaScript/TypeScript, shell scripts, C/C++, Go, Rust, Zig, Java, Kotlin, Scala, C#/.NET, PHP, Ruby, Perl, R, Julia, Swift, Dart, Elixir, Erlang, Clojure, Haskell, OCaml, F#, and VB, with per-language runner configuration.
 
 ## Requirements
 
 - Neovim 0.10+ for `vim.system`
 - A matching runtime/compiler installed for the language you want to execute
 
-Default runners:
+Default runners use the standard CLI/runtime for each language when available, such as:
 
-- `python3`
-- `lua`
-- `node`
-- `tsx`
-- `cc`
-- `c++`
-- `go`
-- `cargo`
-- `rustc`
-- `zig`
+- `python3`, `lua`, `node`, `tsx`
+- `bash`, `zsh`, `fish`, `pwsh`
+- `cc`, `c++`, `go`, `cargo`, `rustc`, `zig`
+- `java`, `kotlinc`, `scala`, `dotnet`, `dotnet-script`
+- `php`, `ruby`, `perl`, `Rscript`, `julia`, `swift`, `dart`
+- `elixir`, `escript`, `clojure`, `runghc`, `ocaml`, `vbnc`
 
 ## Setup
 
@@ -158,14 +154,11 @@ Commands:
 - `:Run {name}`
 - `:BugChaserToggleDiagnosticVirtualLines`
 
-Language keys:
+Language keys include:
 
-- `python`
-- `lua`
-- `javascript`
-- `typescript`
-- `c`
-- `cpp`
-- `go`
-- `rust`
-- `zig`
+- `python`, `lua`, `javascript`, `javascriptreact`, `typescript`, `typescriptreact`
+- `sh`, `bash`, `zsh`, `fish`, `powershell`
+- `c`, `cpp`, `go`, `rust`, `zig`
+- `java`, `kotlin`, `scala`, `csharp`, `fsharp`, `vb`
+- `php`, `ruby`, `perl`, `r`, `julia`, `swift`, `dart`
+- `elixir`, `erlang`, `clojure`, `haskell`, `ocaml`

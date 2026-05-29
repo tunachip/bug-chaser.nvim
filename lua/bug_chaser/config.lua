@@ -74,7 +74,17 @@ local defaults = {
     },
     zsh = {
       args = { "$file" },
-      command = "bash",
+      command = "zsh",
+      mode = "command",
+    },
+    fish = {
+      args = { "$file" },
+      command = "fish",
+      mode = "command",
+    },
+    powershell = {
+      args = { "$file" },
+      command = "pwsh",
       mode = "command",
     },
     c = {
@@ -97,6 +107,51 @@ local defaults = {
       mode = "compiled",
       run_args = {},
       run_command = "$target",
+    },
+    java = {
+      args = { "$file" },
+      command = "java",
+      mode = "command",
+    },
+    kotlin = {
+      compile_args = { "$file", "-include-runtime", "-d", "$target" },
+      compiler = "kotlinc",
+      mode = "compiled",
+      run_args = { "-jar", "$target" },
+      run_command = "java",
+    },
+    scala = {
+      args = { "$file" },
+      command = "scala",
+      mode = "command",
+    },
+    csharp = {
+      commands = {
+        ["current-buffer"] = {
+          args = { "$file" },
+          command = "dotnet-script",
+          description = "Run the current C# file with dotnet-script",
+          mode = "command",
+        },
+        ["dotnet-run"] = {
+          args = { "run" },
+          capture = "none",
+          command = "dotnet",
+          cwd = function(ctx)
+            local start = util.dirname(ctx.source_path or ctx.exec_source_path or "")
+            local project = vim.fs and vim.fs.find and vim.fs.find(function(name)
+              return name:match("%.csproj$") or name:match("%.fsproj$") or name:match("%.vbproj$")
+            end, { path = start, upward = true })[1]
+            if project then
+              return util.dirname(project)
+            end
+
+            return ctx.default_cwd
+          end,
+          description = "Run the nearest .NET project",
+          mode = "command",
+        },
+      },
     },
     rust = {
       commands = {
@@ -132,6 +187,78 @@ local defaults = {
       mode = "compiled",
       run_args = {},
       run_command = "$target",
+    },
+    php = {
+      args = { "$file" },
+      command = "php",
+      mode = "command",
+    },
+    ruby = {
+      args = { "$file" },
+      command = "ruby",
+      mode = "command",
+    },
+    perl = {
+      args = { "$file" },
+      command = "perl",
+      mode = "command",
+    },
+    r = {
+      args = { "$file" },
+      command = "Rscript",
+      mode = "command",
+    },
+    julia = {
+      args = { "$file" },
+      command = "julia",
+      mode = "command",
+    },
+    swift = {
+      args = { "$file" },
+      command = "swift",
+      mode = "command",
+    },
+    dart = {
+      args = { "$file" },
+      command = "dart",
+      mode = "command",
+    },
+    elixir = {
+      args = { "$file" },
+      command = "elixir",
+      mode = "command",
+    },
+    erlang = {
+      args = { "$file" },
+      command = "escript",
+      mode = "command",
+    },
+    clojure = {
+      args = { "$file" },
+      command = "clojure",
+      mode = "command",
+    },
+    haskell = {
+      args = { "$file" },
+      command = "runghc",
+      mode = "command",
+    },
+    ocaml = {
+      args = { "$file" },
+      command = "ocaml",
+      mode = "command",
+    },
+    fsharp = {
+      args = { "fsi", "$file" },
+      command = "dotnet",
+      mode = "command",
+    },
+    vb = {
+      compiler = "vbnc",
+      mode = "compiled",
+      compile_args = { "$file", "-out:$target" },
+      run_command = "$target",
+      run_args = {},
     },
   },
 }
